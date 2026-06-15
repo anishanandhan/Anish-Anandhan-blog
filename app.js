@@ -1,4 +1,4 @@
-// --- BLOG POSTS DATA STORE ---
+// --- BLOG POSTS METADATA STORE (NO HTML STRINGS) ---
 const blogPosts = [
   {
     id: "byovd-kernel-abuse",
@@ -9,122 +9,7 @@ const blogPosts = [
     readTime: "10 min read",
     excerpt: "An in-depth analysis of how adversary groups leverage signed, vulnerable drivers to bypass Windows Kernel-Mode Code Signing (KMCS) and execute code in ring 0.",
     bannerText: "RING 0 ABUSE",
-    content: `
-      <p>In modern Windows security architectures, the kernel boundary (Ring 0) is heavily guarded. Windows enforces Kernel-Mode Code Signing (KMCS), ensuring that only drivers cryptographically signed by trusted authorities or Microsoft itself can load into kernel space. However, threat actors have found an elegant, highly effective bypass: <strong>Bring Your Own Vulnerable Driver (BYOVD)</strong>.</p>
-      
-      <blockquote>
-        <strong>BYOVD Concept:</strong> Instead of writing a kernel exploit from scratch or attempting to sign a malicious driver, an attacker installs a legitimate, signed driver that contains a known security flaw (e.g., arbitrary physical memory read/write) and exploits that flaw from user mode (Ring 3) to compromise kernel memory.
-      </blockquote>
-
-      <h2>Why This Topic Matters</h2>
-      <p>BYOVD attacks are increasingly used by advanced persistent threats (APTs) and ransomware groups (like Lapsus$, BlackByte, and Cuba Ransomware) to disable Endpoint Detection and Response (EDR) agents. EDRs operate with high privileges, but their drivers run in Ring 0. By gaining arbitrary write access in Ring 0, attackers can simply locate the EDR driver's active structures in memory and patch its execution flow or clear its process notification callbacks.</p>
-
-      <h2>Methodology & Exploit Mechanics</h2>
-      <p>Most vulnerable drivers expose read/write primitives to user mode through input/output control (IOCTL) codes. When a user-mode application calls <code>DeviceIoControl</code>, the kernel routes the request to the driver's dispatch routine. If the driver fails to validate the buffer addresses or checks, it creates a security loophole.</p>
-      
-      <p>For example, the vulnerable Micro-Star MSI Ambient Light driver (<code>RTCore64.sys</code>) exposes IOCTLs that read and write physical and virtual memory. Below is a conceptual illustration of how a user-mode application interacts with this primitive:</p>
-
-      <div class="code-block-wrapper">
-        <div class="code-block-header">
-          <span class="code-block-lang">cpp</span>
-          <button class="copy-code-btn" onclick="copyCode(this)"><i class="far fa-copy"></i> Copy</button>
-        </div>
-        <pre><code>// Open a handle to the vulnerable driver
-HANDLE hDevice = CreateFileW(
-    L"\\\\.\\RTCore64",
-    GENERIC_READ | GENERIC_WRITE,
-    0,
-    NULL,
-    OPEN_EXISTING,
-    FILE_ATTRIBUTE_NORMAL,
-    NULL
-);
-
-if (hDevice == INVALID_HANDLE_VALUE) {
-    printf("[-] Failed to obtain driver handle: %d\\n", GetLastError());
-    return;
-}
-
-// Struct for RTCore64 read/write operations
-struct RT_MEMORY_READ {
-    DWORD Address;
-    BYTE Size; // 1, 2, or 4 bytes
-    DWORD Value;
-};
-
-// Reading a kernel virtual address via IOCTL 0x80002048
-RT_MEMORY_READ readReq;
-readReq.Address = targetKernelAddress;
-readReq.Size = 4;
-readReq.Value = 0;
-
-DWORD bytesReturned;
-BOOL success = DeviceIoControl(
-    hDevice,
-    0x80002048, // Vulnerable read IOCTL
-    &readReq, sizeof(readReq),
-    &readReq, sizeof(readReq),
-    &bytesReturned,
-    NULL
-);
-
-if (success) {
-    printf("[+] Kernel Data at 0x%08X: 0x%08X\\n", targetKernelAddress, readReq.Value);
-}</code></pre>
-      </div>
-
-      <h2>Defensive Strategy & Detection</h2>
-      <p>Defending against BYOVD is primarily about restricting driver load operations. Here are the core defensive controls:</p>
-      <ul>
-        <li><strong>Microsoft Vulnerable Driver Blocklist:</strong> Enable driver blocklisting via Windows Defender Application Control (WDAC). This blocks known bad drivers from loading entirely.</li>
-        <li><strong>Credential Guard and HVCI:</strong> Hypervisor-Protected Code Integrity (HVCI) uses virtualization-based security to prevent unsigned code injection in kernel memory.</li>
-        <li><strong>Sysmon Monitoring:</strong> Monitor Event ID 6 (Driver Loaded) to track driver installations and cross-reference hashes against known vulnerable driver repositories like the LOLDrivers database.</li>
-      </ul>
-
-      <div class="callout info">
-        <div class="callout-icon"><i class="fas fa-shield-alt"></i></div>
-        <div class="callout-content">
-          <strong>Detection Tip:</strong> Keep an eye on non-standard drivers being registered by non-system processes. In Splunk, search for Sysmon EventID 6 where the driver path is in <code>C:\\Users\\*</code> or <code>C:\\Windows\\Temp\\*</code>.
-        </div>
-      </div>
-
-      <h2>Sigma Detection Rule</h2>
-      <p>Here is a Sigma rule pattern designed to detect the loading of <code>RTCore64.sys</code> based on its driver name or hash:</p>
-
-      <div class="code-block-wrapper">
-        <div class="code-block-header">
-          <span class="code-block-lang">yaml</span>
-          <button class="copy-code-btn" onclick="copyCode(this)"><i class="far fa-copy"></i> Copy</button>
-        </div>
-        <pre><code>title: Vulnerable RTCore64 Driver Load
-id: 9a5d5c58-48be-4cc5-9ab3-5c0dbfa11440
-status: experimental
-description: Detects the load of RTCore64.sys, a frequently abused driver in BYOVD attacks.
-author: Anish Anandhan A L
-logsource:
-    product: windows
-    service: sysmon
-detection:
-    selection_sysmon:
-        EventID: 6
-    selection_driver:
-        ImageLoaded|endswith:
-            - '\\RTCore64.sys'
-            - '\\RTCore32.sys'
-    condition: selection_sysmon and selection_driver
-falsepositives:
-    - Legitimate MSI utility installations (rare in enterprise servers)
-level: high</code></pre>
-      </div>
-
-      <div class="article-disclaimer">
-        <i class="fas fa-exclamation-triangle"></i>
-        <div>
-          <div class="disclaimer-title">Educational Disclaimer</div>
-          <div class="disclaimer-text">This content is published strictly for defensive research and educational purposes. The code snippets and conceptual discussions are intended to aid security teams in detection engineering and kernel security posture validation. Do not attempt to load or exploit driver vulnerabilities on systems without explicit authorization.</div>
-        </div>
-      </div>
-    `
+    markdownPath: "posts/byovd-kernel-abuse.md"
   },
   {
     id: "ghidra-decompiler-crypters",
@@ -135,80 +20,7 @@ level: high</code></pre>
     readTime: "8 min read",
     excerpt: "Reversing a custom packing utility to understand import address table (IAT) obfuscation and dynamic payload decryption mechanisms.",
     bannerText: "GHIDRA DECODE",
-    content: `
-      <p>Malware authors constantly employ packers, crypters, and protectors to obscure their payloads from static analysis engines and analyst signatures. In this post, we will walk through analyzing a custom crypted PE (Portable Executable) binary, focusing on reconstructing its decryption routines using Ghidra's decompiler.</p>
-      
-      <h2>Reconnaissance & PE Analysis</h2>
-      <p>Before launching Ghidra, we perform basic static checks. Using <code>PEview</code> or <code>Detect It Easy (DIE)</code>, we notice that the entropy of the <code>.text</code> section is unusually low (around 2.5), while a custom section named <code>.kdata</code> has an entropy of 7.92. This is a classic indicator of an encrypted payload packed into a dedicated section.</p>
-      
-      <p>Additionally, the Import Address Table (IAT) is sparse, importing only <code>LoadLibraryA</code>, <code>GetProcAddress</code>, and <code>VirtualAlloc</code>. This tells us the crypted payload resolves its APIs dynamically at runtime.</p>
-
-      <h2>Decompiling the Main Loader in Ghidra</h2>
-      <p>Once we load the binary into Ghidra and execute auto-analysis, we locate the entry point. The main function contains an initialization phase, followed by a decryption loop. Here is the decompiled loop reconstructed from Ghidra:</p>
-
-      <div class="code-block-wrapper">
-        <div class="code-block-header">
-          <span class="code-block-lang">c</span>
-          <button class="copy-code-btn" onclick="copyCode(this)"><i class="far fa-copy"></i> Copy</button>
-        </div>
-        <pre><code>// Reconstructed from Ghidra decompiler output
-undefined4 entry(void) {
-  LPVOID encrypted_data_ptr;
-  LPVOID allocated_memory;
-  uint i;
-  byte xor_key;
-  
-  // Custom encrypted section starts at 0x408000
-  encrypted_data_ptr = (LPVOID)0x408000;
-  xor_key = 0x6A; // Dynamic XOR key
-  
-  // Allocate read-write-execute memory for the decrypted payload
-  allocated_memory = VirtualAlloc((LPVOID)0x0, 0xC400, 0x3000, 0x40);
-  
-  if (allocated_memory != (LPVOID)0x0) {
-    // Decryption Loop (simple rolling XOR example)
-    for (i = 0; i < 0xC400; i = i + 1) {
-      *(byte *)((int)allocated_memory + i) = 
-        *(byte *)((int)encrypted_data_ptr + i) ^ xor_key ^ (byte)i;
-    }
-    
-    // Cast allocated memory to function pointer and execute payload
-    (*(code *)allocated_memory)();
-  }
-  return 0;
-}</code></pre>
-      </div>
-
-      <h2>Reversing Obfuscated Strings</h2>
-      <p>In real-world malware, strings (like library names or API calls) are rarely stored in plaintext. They are often obfuscated using stack strings or custom hashing. In this sample, the loader resolved <code>Kernel32.dll</code> by pushing hex values onto the stack byte-by-byte.</p>
-      
-      <p>By right-clicking on variables in Ghidra and choosing <strong>Convert -> Char</strong>, we can easily read the stack strings in the decompiler without running the debugger.</p>
-
-      <div class="callout warning">
-        <div class="callout-icon"><i class="fas fa-exclamation-circle"></i></div>
-        <div class="callout-content">
-          <strong>Analysis Tip:</strong> If you encounter API hashing (e.g., ROR13 hashing), avoid manual calculation. Use a Ghidra script or an emulator like <code>x64dbg</code> with ScyllaHide to let the loader resolve imports for you, then dump the binary.
-        </div>
-      </div>
-
-      <h2>Key Findings & Next Steps</h2>
-      <p>After the decryption loop completes, the malware executes the payload in the newly allocated memory space. To analyze the next stage, we must perform a dynamic dump:
-      <ol>
-        <li>Load the file in a debugger (like <code>x64dbg</code>).</li>
-        <li>Set a breakpoint on the call instruction to the decrypted buffer (e.g., <code>call eax</code>).</li>
-        <li>Step into the code and use the Scylla plugin to dump the decrypted PE structure.</li>
-        <li>Load the dumped PE into Ghidra for secondary analysis.</li>
-      </ol>
-      </p>
-
-      <div class="article-disclaimer">
-        <i class="fas fa-exclamation-triangle"></i>
-        <div>
-          <div class="disclaimer-title">Educational Disclaimer</div>
-          <div class="disclaimer-text">This walkthrough details malware decryption methodologies purely for security research, threat hunting, and educational analysis. The techniques are shared to help detection engineers identify loader patterns and signature-based packing techniques.</div>
-        </div>
-      </div>
-    `
+    markdownPath: "posts/ghidra-decompiler-crypters.md"
   },
   {
     id: "splunk-sigma-lsass-dumping",
@@ -219,82 +31,7 @@ undefined4 entry(void) {
     readTime: "7 min read",
     excerpt: "Building resilient Sigma rules that detect LSASS credential dumping techniques via Sysmon Event ID 10 and Event ID 11.",
     bannerText: "LSASS DEFENSE",
-    content: `
-      <p>Credential dumping remains one of the most common post-exploitation activities. Attackers access the Local Security Authority Subsystem Service (LSASS) memory space to extract plaintext credentials, NTLM hashes, and Kerberos tickets. Tools like Mimikatz, Dumpert, or even the built-in <code>rundll32.exe comsvcs.dll</code> execute this technique. In this post, we will construct robust detection logic to intercept these dumping attempts.</p>
-
-      <h2>How LSASS Dumping Works (The Windows Internals View)</h2>
-      <p>To extract memory from a process, the dumping tool must open a handle to LSASS (<code>lsass.exe</code>) with specific access rights. Specifically, it requires <code>PROCESS_VM_READ</code> (0x0010) and <code>PROCESS_QUERY_INFORMATION</code> (0x0400). When Sysmon is installed, it logs these handle creations as <strong>Event ID 10: ProcessAccess</strong>.</p>
-      
-      <p>Additionally, if the tool creates a physical dump file on disk (like Mimikatz writing <code>lsass.dmp</code>), Sysmon logs it as <strong>Event ID 11: FileCreate</strong>.</p>
-
-      <h2>Detecting lsass.dmp Creation on Disk</h2>
-      <p>A simple yet effective detection checks for common process utilities generating files that match LSASS dump characteristics. Attackers often rename the dump file to hide, but we can look for specific process linkages.</p>
-      
-      <p>For example, using <code>rundll32.exe</code> to dump LSASS memory usually involves invoking the mini-dump function in <code>comsvcs.dll</code>. The command line looks like this:</p>
-      
-      <code>rundll32.exe C:\\windows\\System32\\comsvcs.dll, MiniDump [LSASS_PID] C:\\temp\\lsass.dmp full</code>
-
-      <h2>Splunk Search Query</h2>
-      <p>Here is an enterprise-grade Splunk search that correlates process command line arguments and flags suspicious uses of comsvcs.dll:</p>
-
-      <div class="code-block-wrapper">
-        <div class="code-block-header">
-          <span class="code-block-lang">splunk</span>
-          <button class="copy-code-btn" onclick="copyCode(this)"><i class="far fa-copy"></i> Copy</button>
-        </div>
-        <pre><code>index=windows sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational" EventCode=1 (CommandLine="*comsvcs.dll*MiniDump*" OR CommandLine="*comsvcs.dll*,#24*")
-| stats count min(_time) as firstTime max(_time) as lastTime by Computer, User, Image, CommandLine, ParentImage
-| convert ctime(firstTime) ctime(lastTime)</code></pre>
-      </div>
-
-      <h2>Sigma Rule for LSASS Process Access</h2>
-      <p>This Sigma rule focuses on the Sysmon Event ID 10 (ProcessAccess). It checks if a suspicious process requests read access to LSASS, ignoring standard system false positives like <code>taskmgr.exe</code> or Windows Defender:</p>
-
-      <div class="code-block-wrapper">
-        <div class="code-block-header">
-          <span class="code-block-lang">yaml</span>
-          <button class="copy-code-btn" onclick="copyCode(this)"><i class="far fa-copy"></i> Copy</button>
-        </div>
-        <pre><code>title: Suspicious Access to LSASS Memory
-id: 5a8a8c1f-4ea6-4cb0-9bbd-e4fb3cc71871
-status: stable
-description: Detects process access requests to LSASS with VM Read access rights, which indicates credential dumping.
-author: Anish Anandhan A L
-logsource:
-    product: windows
-    service: sysmon
-detection:
-    selection:
-        EventID: 10
-        TargetImage|endswith: '\\lsass.exe'
-        GrantedAccess|contains:
-            - '0x10'   # PROCESS_VM_READ
-            - '0x1fffff' # PROCESS_ALL_ACCESS
-    filter_legitimate:
-        SourceImage|endswith:
-            - '\\defender.exe'
-            - '\\msmpeng.exe'
-            - '\\taskmgr.exe'
-            - '\\svchost.exe'
-    condition: selection and not filter_legitimate
-level: high</code></pre>
-      </div>
-
-      <div class="callout info">
-        <div class="callout-icon"><i class="fas fa-info-circle"></i></div>
-        <div class="callout-content">
-          <strong>Tuning Detections:</strong> In production environments, antivirus agents and credential guard systems will trigger false positives. Ensure you build exclusions for your specific endpoint agents by filtering on their executable path and signing certificate.
-        </div>
-      </div>
-
-      <div class="article-disclaimer">
-        <i class="fas fa-exclamation-triangle"></i>
-        <div>
-          <div class="disclaimer-title">Educational Disclaimer</div>
-          <div class="disclaimer-text">This analysis of LSASS memory dumping is shared to provide defenders, detection engineers, and security analysts with the queries and rules required to monitor enterprise Windows systems. Do not use this information for unauthorized credential dumping or unauthorized network security audits.</div>
-        </div>
-      </div>
-    `
+    markdownPath: "posts/splunk-sigma-lsass-dumping.md"
   }
 ];
 
@@ -418,8 +155,73 @@ function scrollToTerminal() {
   }, 300);
 }
 
-// Navigation Function: Open Specific Article
-function openArticle(postId) {
+// Preprocess Markdown custom blocks (e.g. :::info, :::warning)
+function preprocessMarkdown(mdText) {
+  // Parse :::info ... ::: blocks
+  mdText = mdText.replace(/:::info\s*([\s\S]*?)\n:::/g, (match, content) => {
+    return `<div class="callout info">
+      <div class="callout-icon"><i class="fas fa-info-circle"></i></div>
+      <div class="callout-content">${marked.parse(content.trim())}</div>
+    </div>`;
+  });
+
+  // Parse :::warning ... ::: blocks
+  mdText = mdText.replace(/:::warning\s*([\s\S]*?)\n:::/g, (match, content) => {
+    return `<div class="callout warning">
+      <div class="callout-icon"><i class="fas fa-exclamation-circle"></i></div>
+      <div class="callout-content">${marked.parse(content.trim())}</div>
+    </div>`;
+  });
+
+  return mdText;
+}
+
+// Post-process HTML DOM to wrap code blocks with copy-buttons
+function postProcessArticleDOM(container) {
+  const preElements = container.querySelectorAll("pre");
+  preElements.forEach(pre => {
+    const code = pre.querySelector("code");
+    if (!code) return;
+    
+    // Extract language from class (e.g., "language-cpp")
+    let lang = "code";
+    const classList = code.className.split(" ");
+    const langClass = classList.find(c => c.startsWith("language-"));
+    if (langClass) {
+      lang = langClass.substring(9);
+    }
+    
+    // Create wrapper
+    const wrapper = document.createElement("div");
+    wrapper.className = "code-block-wrapper";
+    
+    const header = document.createElement("div");
+    header.className = "code-block-header";
+    header.innerHTML = `
+      <span class="code-block-lang">${lang}</span>
+      <button class="copy-code-btn" onclick="copyCode(this)"><i class="far fa-copy"></i> Copy</button>
+    `;
+    
+    // Swap nodes
+    pre.parentNode.insertBefore(wrapper, pre);
+    wrapper.appendChild(header);
+    wrapper.appendChild(pre);
+  });
+}
+
+// Educational Disclaimer HTML
+const brandDisclaimerHTML = `
+  <div class="article-disclaimer">
+    <i class="fas fa-exclamation-triangle"></i>
+    <div>
+      <div class="disclaimer-title">Educational Disclaimer</div>
+      <div class="disclaimer-text">This content is published strictly for defensive research and educational purposes. The code snippets, configurations, and reversing methodologies are shared to help security teams, reverse engineers, and malware analysts improve detection engineering and posture validation. Do not attempt to load or execute driver vulnerabilities or exploit techniques on systems without explicit authorization.</div>
+    </div>
+  </div>
+`;
+
+// Navigation Function: Open and Load Specific Article via Fetch
+async function openArticle(postId) {
   const post = blogPosts.find(p => p.id === postId);
   if (!post) return;
 
@@ -427,43 +229,79 @@ function openArticle(postId) {
   homeView.style.display = "none";
   articleView.style.display = "block";
   
-  // Update article content
+  // Set temporary loading state
   document.getElementById("article-placeholder").innerHTML = `
-    <div class="article-header">
-      <div class="article-meta">
-        <div class="post-meta-item">
-          <i class="far fa-calendar-alt"></i>
-          <span>${post.date}</span>
-        </div>
-        <div class="post-meta-item">
-          <i class="far fa-clock"></i>
-          <span>${post.readTime}</span>
-        </div>
-        <div class="post-meta-item">
-          <i class="far fa-user"></i>
-          <span>Anish Anandhan A L</span>
-        </div>
-      </div>
-      <h1 class="article-title">${post.title}</h1>
-      <div class="article-tags">
-        <span class="post-tag ${post.tagClass}">${post.tag}</span>
-      </div>
-    </div>
-    
-    <div class="article-banner">
-      <div class="article-banner-text">${post.bannerText}</div>
-    </div>
-
-    <div class="article-content">
-      ${post.content}
+    <div style="text-align: center; padding: 5rem; color: var(--text-muted); font-family: var(--font-mono);">
+      <i class="fas fa-circle-notch fa-spin" style="font-size: 2rem; margin-bottom: 1rem; color: var(--accent);"></i>
+      <p>Fetching kernel writeup payload...</p>
     </div>
   `;
 
-  setTimeout(() => {
+  try {
+    const response = await fetch(post.markdownPath);
+    if (!response.ok) {
+      throw new Error(`Failed to load post: ${response.statusText}`);
+    }
+    const rawMarkdown = await response.text();
+    
+    // Compile markdown to HTML
+    const preprocessed = preprocessMarkdown(rawMarkdown);
+    const parsedHtml = marked.parse(preprocessed);
+
+    // Update article view layout
+    const articleContainer = document.getElementById("article-placeholder");
+    articleContainer.innerHTML = `
+      <div class="article-header">
+        <div class="article-meta">
+          <div class="post-meta-item">
+            <i class="far fa-calendar-alt"></i>
+            <span>${post.date}</span>
+          </div>
+          <div class="post-meta-item">
+            <i class="far fa-clock"></i>
+            <span>${post.readTime}</span>
+          </div>
+          <div class="post-meta-item">
+            <i class="far fa-user"></i>
+            <span>Anish Anandhan A L</span>
+          </div>
+        </div>
+        <h1 class="article-title">${post.title}</h1>
+        <div class="article-tags">
+          <span class="post-tag ${post.tagClass}">${post.tag}</span>
+        </div>
+      </div>
+      
+      <div class="article-banner">
+        <div class="article-banner-text">${post.bannerText}</div>
+      </div>
+
+      <div class="article-content">
+        ${parsedHtml}
+        ${brandDisclaimerHTML}
+      </div>
+    `;
+
+    // Add copy buttons to code blocks
+    postProcessArticleDOM(articleContainer);
+
+    setTimeout(() => {
+      articleView.classList.add("active");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      updateReadingProgress();
+    }, 50);
+
+  } catch (error) {
+    console.error(error);
+    document.getElementById("article-placeholder").innerHTML = `
+      <div style="text-align: center; padding: 5rem; color: #f43f5e; font-family: var(--font-mono);">
+        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+        <p>Error: Could not retrieve article payload (${error.message}).</p>
+        <button onclick="navigateToHome()" class="back-btn" style="margin-top: 1.5rem;">Return to Feed</button>
+      </div>
+    `;
     articleView.classList.add("active");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    updateReadingProgress();
-  }, 50);
+  }
 }
 
 // Update Reading Progress Bar
@@ -541,9 +379,10 @@ let commandHistory = [];
 let historyIndex = -1;
 
 const terminalWelcomeMessage = `===========================================================
-* INSIDE THE KERNEL - INTERACTIVE COMMAND SHELL v1.0.4    *
+* INSIDE THE KERNEL - INTERACTIVE COMMAND SHELL v1.1.0    *
 * Target Host: windows-kernel-research                    *
 * Author: Anish Anandhan A L                              *
+* Mode: Markdown Compiler Enabled                         *
 ===========================================================
 Type 'help' to display a list of available system commands.
 `;
@@ -563,7 +402,6 @@ function writeTermLine(text, type = "output") {
 }
 
 function printTermPrompt() {
-  // Move input line to the bottom
   const inputLine = document.querySelector(".term-input-line");
   terminalBody.appendChild(inputLine);
   termInput.focus();
@@ -599,9 +437,8 @@ function executeCommand(cmdStr) {
 -rw-r--r--  1 anish  staff   350B Jun 15 23:38 bio.txt
 -rw-r--r--  1 anish  staff   512B Jun 15 23:38 skills.json
 drwxr-xr-x  3 anish  staff   102B Jun 15 23:38 posts/`);
-      postsGrid.querySelectorAll(".post-card").forEach(card => {
-        const id = card.getAttribute("data-id");
-        writeTermLine(`  └─ posts/${id}`, "success");
+      blogPosts.forEach(post => {
+        writeTermLine(`  └─ posts/${post.id}.md`, "success");
       });
       break;
 
@@ -617,6 +454,10 @@ Focus areas: Malware Analysis, Reverse Engineering, Vulnerable Driver Research, 
 Guiding Philosophy: Learn. Analyze. Defend.`, "success");
         } else if (filename === "skills.json") {
           executeCommand("skills");
+        } else if (filename.startsWith("posts/") && filename.endsWith(".md")) {
+          // Extract post ID
+          const postId = args[1].substring(6, args[1].length - 3);
+          executeCommand(`read ${postId}`);
         } else if (filename.startsWith("posts/")) {
           const postId = args[1].substring(6);
           executeCommand(`read ${postId}`);
@@ -671,7 +512,6 @@ Guiding Philosophy: Learn. Analyze. Defend.`, "success");
 // Matrix rain logic
 let matrixInterval = null;
 function startMatrixRain() {
-  // If canvas doesn't exist, create it inside the terminal container
   let canvas = document.getElementById("matrix-canvas");
   if (!canvas) {
     canvas = document.createElement("canvas");
@@ -690,7 +530,6 @@ function startMatrixRain() {
   canvas.style.display = "block";
   const ctx = canvas.getContext("2d");
   
-  // Set dimensions
   const resize = () => {
     canvas.width = canvas.parentElement.offsetWidth;
     canvas.height = canvas.parentElement.offsetHeight;
@@ -729,7 +568,6 @@ function startMatrixRain() {
   if (matrixInterval) clearInterval(matrixInterval);
   matrixInterval = setInterval(draw, 30);
 
-  // Auto shut down matrix after 10 seconds to save resource
   setTimeout(() => {
     stopMatrixRain();
   }, 10000);
