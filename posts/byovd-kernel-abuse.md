@@ -1,16 +1,32 @@
+# Bring Your Own Vulnerable Driver (BYOVD): Understanding Kernel-Mode Abuse
+
+## Executive Summary & Key Takeaways
 In modern Windows security architectures, the kernel boundary (Ring 0) is heavily guarded. Windows enforces Kernel-Mode Code Signing (KMCS), ensuring that only drivers cryptographically signed by trusted authorities or Microsoft itself can load into kernel space. However, threat actors have found an elegant, highly effective bypass: **Bring Your Own Vulnerable Driver (BYOVD)**.
 
-> **BYOVD Concept:** Instead of writing a kernel exploit from scratch or attempting to sign a malicious driver, an attacker installs a legitimate, signed driver that contains a known security flaw (e.g., arbitrary physical memory read/write) and exploits that flaw from user mode (Ring 3) to compromise kernel memory.
+*   **Attack Vector:** Instead of writing a kernel exploit from scratch or attempting to sign a malicious driver, an attacker installs a legitimate, signed driver that contains a known security flaw (e.g., arbitrary physical memory read/write) and exploits that flaw from user mode (Ring 3) to compromise kernel memory.
+*   **Primary Objective:** Defeating Endpoint Detection and Response (EDR) agents by patching their active processes and notification callbacks directly in Ring 0.
+*   **Key Finding:** Threat actors frequently abuse legitimate utilities like the Micro-Star MSI Ambient Light driver (`RTCore64.sys`) because it contains highly permissive, arbitrary read/write primitives exposed through IOCTLs.
 
-## Why This Topic Matters
+---
 
-BYOVD attacks are increasingly used by advanced persistent threats (APTs) and ransomware groups (like Lapsus$, BlackByte, and Cuba Ransomware) to disable Endpoint Detection and Response (EDR) agents. EDRs operate with high privileges, but their drivers run in Ring 0. By gaining arbitrary write access in Ring 0, attackers can simply locate the EDR driver's active structures in memory and patch its execution flow or clear its process notification callbacks.
+## Sample Metadata
+Providing exact metadata is critical for threat intelligence verification and hash blocking:
 
-## Methodology & Exploit Mechanics
+| Attribute | Details |
+| :--- | :--- |
+| **File Name** | `RTCore64.sys` |
+| **Description** | Micro-Star MSI Afterburner Hardware Monitoring Driver |
+| **Architecture** | x64 PE executable |
+| **Size** | 61,048 bytes |
+| **SHA-256 Hash** | `c022848993fbfedce79a3a928402c7fecb962d29fa4d2026d58ffd630f9a2b22` |
+| **Known Vulnerability** | CVE-2019-16098 (Arbitrary physical/virtual memory read/write) |
 
+---
+
+## Technical Analysis & Exploit Mechanics
 Most vulnerable drivers expose read/write primitives to user mode through input/output control (IOCTL) codes. When a user-mode application calls `DeviceIoControl`, the kernel routes the request to the driver's dispatch routine. If the driver fails to validate the buffer addresses or checks, it creates a security loophole.
 
-For example, the vulnerable Micro-Star MSI Ambient Light driver (`RTCore64.sys`) exposes IOCTLs that read and write physical and virtual memory. Below is a conceptual illustration of how a user-mode application interacts with this primitive:
+For example, the vulnerable driver `RTCore64.sys` exposes IOCTLs that read and write physical and virtual memory. Below is a conceptual illustration of how a user-mode application interacts with this primitive:
 
 ```cpp
 // Open a handle to the vulnerable driver
@@ -57,20 +73,23 @@ if (success) {
 }
 ```
 
-## Defensive Strategy & Detection
+---
 
-Defending against BYOVD is primarily about restricting driver load operations. Here are the core defensive controls:
+## MITRE ATT&CK Mapping
+Mapping observed attacker actions against standard industry TTPs:
 
-* **Microsoft Vulnerable Driver Blocklist:** Enable driver blocklisting via Windows Defender Application Control (WDAC). This blocks known bad drivers from loading entirely.
-* **Credential Guard and HVCI:** Hypervisor-Protected Code Integrity (HVCI) uses virtualization-based security to prevent unsigned code injection in kernel memory.
-* **Sysmon Monitoring:** Monitor Event ID 6 (Driver Loaded) to track driver installations and cross-reference hashes against known vulnerable driver repositories like the LOLDrivers database.
+| Tactic | Technique ID | Technique Name | Use Case in BYOVD |
+| :--- | :--- | :--- | :--- |
+| **Defense Evasion** | T1562.001 | Impair Defenses: Disable or Modify Tools | Attackers use the kernel write primitive to patch EDR system routines and processes. |
+| **Privilege Escalation** | T1068 | Exploitation for Privilege Escalation | Exploiting driver IOCTL vulnerabilities from user mode (Ring 3) to execute kernel-mode read/write instructions (Ring 0). |
+| **Persistence** | T1543.003 | Create or Modify System Process: Windows Service | Attacker registers a temporary Windows service to force-load the vulnerable driver. |
 
-:::info
-**Detection Tip:** Keep an eye on non-standard drivers being registered by non-system processes. In Splunk, search for Sysmon EventID 6 where the driver path is in `C:\Users\*` or `C:\Windows\Temp\*`.
-:::
+---
 
-## Sigma Detection Rule
+## Detection Engineering & Rules
+Defending against BYOVD is primarily about restricting driver load operations and auditing events.
 
+### Sigma Detection Rule
 Here is a Sigma rule pattern designed to detect the loading of `RTCore64.sys` based on its driver name or hash:
 
 ```yaml
@@ -94,3 +113,26 @@ falsepositives:
     - Legitimate MSI utility installations (rare in enterprise servers)
 level: high
 ```
+
+:::info
+**Detection Tip:** Keep an eye on non-standard drivers being registered by non-system processes. In Splunk, search for Sysmon EventID 6 where the driver path is in `C:\Users\*` or `C:\Windows\Temp\*`.
+:::
+
+---
+
+## Indicators of Compromise (IOCs)
+Use these indicators to audit systems for signs of compromise:
+
+| Artifact Type | Indicator | Description / Details |
+| :--- | :--- | :--- |
+| **File Path** | `C:\Windows\System32\drivers\RTCore64.sys` | Standard installation location for the driver |
+| **File SHA-256** | `c022848993fbfedce79a3a928402c7fecb962d29fa4d2026d58ffd630f9a2b22` | Vulnerable driver hash |
+| **Service Name** | `RTCore64` | Driver service registered in Windows Registry |
+| **Symbolic Link** | `\\.\RTCore64` | Symbolic link used by user-mode applications |
+
+---
+
+## Research Reflections & Lessons Learned
+*   **The Challenge:** Connecting user-mode handle allocation to raw physical memory mapping was a major conceptual challenge. It highlighted the importance of understanding the Windows IO Manager and how I/O Request Packets (IRPs) are handled at the driver entry point.
+*   **Key Takeaway:** Digital signatures are not a guarantee of security. A signed driver simply confirms identity, not the absence of severe logical vulnerabilities.
+*   **Next Steps:** I plan to build a test laboratory using WDAC (Windows Defender Application Control) driver audit rules and test blocklist deployment configurations to observe real-world block rates.

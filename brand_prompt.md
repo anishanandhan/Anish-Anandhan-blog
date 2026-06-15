@@ -43,17 +43,25 @@ To document a genuine learning journey through practical cybersecurity research 
 
 ---
 
-## 📄 Article Structure
-Every article should follow this structure to ensure consistency:
-1. **Introduction and Context**
-2. **Why This Topic Matters**
-3. **Methodology and Approach**
-4. **Tools Used**
-5. **Challenges Encountered**
-6. **Key Findings**
-7. **Lessons Learned**
-8. **Future Directions**
-9. **Educational Disclaimer**
+## 📄 Article Structure (Professional Hybrid Format)
+Every article should follow this structure to balance threat research rigor with portfolio reflections:
+
+1. **Executive Summary & Key Takeaways**
+   - High-level overview of the threat, malware family, or vulnerability, and 2-3 key findings.
+2. **Sample Metadata & Environment**
+   - For file/binary/driver analyses: File Name, Size, Architecture, and SHA-256 hash.
+3. **Technical Deep-Dive / Analysis**
+   - Static analysis (imports, strings), Dynamic analysis (process creation, file/registry modifications), or Reverse Engineering (Ghidra decompiled code blocks).
+4. **MITRE ATT&CK Mapping**
+   - A standard table mapping the observed adversary behaviors to the MITRE ATT&CK matrix tactics and technique IDs.
+5. **Detection Engineering & Mitigations**
+   - Actionable detection logic: copy-pasteable Sigma rules, Splunk SPL queries, YARA rules, or GPO mitigations.
+6. **Indicators of Compromise (IOCs)**
+   - Clear tables/lists detailing host and network artifacts (file hashes, service names, file paths, registry keys).
+7. **Research Reflections & Lessons Learned**
+   - Direct personal reflections: challenges encountered, personal breakthroughs, and future paths for research.
+8. **Educational Disclaimer**
+   - A defensive boundaries notification to prevent misuse.
 
 ---
 
