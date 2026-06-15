@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- SEO Metadata -->
+  <title>Inside the Kernel — Cybersecurity & Reverse Engineering Portfolio</title>
+  <meta name="description" content="Inside the Kernel: Practical write-ups on reverse engineering, vulnerable driver research, malware analysis, and detection engineering by Anish Anandhan A L.">
+  <meta name="author" content="Anish Anandhan A L">
+  
+  <!-- FontAwesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Reading Progress Bar (Fixed Top) -->
+  <div id="reading-progress"></div>
+
+  <!-- Mobile Header Bar -->
+  <div class="mobile-header">
+    <div class="mobile-logo">
+      <i class="fas fa-terminal accent-color"></i>
+      <span>Inside the Kernel</span>
+    </div>
+    <button id="mobile-menu-btn" class="menu-toggle" aria-label="Toggle Menu">
+      <i class="fas fa-bars"></i>
+    </button>
+  </div>
+
+  <div id="app-layout">
+    
+    <!-- SIDEBAR PROFILE & NAVIGATION -->
+    <aside>
+      <div class="author-profile">
+        <div class="avatar-wrapper">
+          <!-- Cyberpunk Tech Emblem Avatar (SVG) -->
+          <svg class="avatar" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="avatar-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#06070a" />
+                <stop offset="100%" stop-color="#0d0f14" />
+              </linearGradient>
+              <linearGradient id="glow-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#00ff9d" />
+                <stop offset="100%" stop-color="#00e5ff" />
+              </linearGradient>
+            </defs>
+            <rect width="100" height="100" rx="50" fill="url(#avatar-grad)" />
+            <!-- Inner Hexagon Shield -->
+            <polygon points="50,22 75,36 75,64 50,78 25,64 25,36" stroke="url(#glow-grad)" stroke-width="2.5" fill="none" opacity="0.8"/>
+            <!-- Inner Microchip Nodes -->
+            <circle cx="50" cy="50" r="8" fill="url(#glow-grad)" />
+            <line x1="50" y1="22" x2="50" y2="42" stroke="#00ff9d" stroke-width="1.5" stroke-dasharray="2 2" />
+            <line x1="50" y1="58" x2="50" y2="78" stroke="#00ff9d" stroke-width="1.5" stroke-dasharray="2 2" />
+            <line x1="25" y1="36" x2="42" y2="46" stroke="#00e5ff" stroke-width="1.5" />
+            <line x1="75" y1="64" x2="58" y2="54" stroke="#00e5ff" stroke-width="1.5" />
+            <line x1="25" y1="64" x2="42" y2="54" stroke="#00e5ff" stroke-width="1.5" />
+            <line x1="75" y1="36" x2="58" y2="46" stroke="#00e5ff" stroke-width="1.5" />
+          </svg>
+          <div class="status-dot"></div>
+        </div>
+        
+        <h2 class="author-name">Anish Anandhan A L</h2>
+        <span class="author-title">Security Researcher</span>
+        <p class="author-desc">
+          Software Engineering student at VIT Chennai. Exploring reverse engineering, kernel driver security, and building robust detection mechanics.
+        </p>
+        
+        <div class="skills-container">
+          <span class="skill-badge">C/C++</span>
+          <span class="skill-badge">Assembly</span>
+          <span class="skill-badge">Ghidra</span>
+          <span class="skill-badge">Splunk</span>
+          <span class="skill-badge">Kernel</span>
+          <span class="skill-badge">Sysmon</span>
+        </div>
+      </div>
+
+      <!-- Sidebar Navigation Links -->
+      <nav class="sidebar-nav">
+        <a href="#" id="nav-home" class="nav-item active">
+          <i class="fas fa-home"></i>
+          <span>Home Feed</span>
+        </a>
+        <a href="#" id="nav-terminal" class="nav-item">
+          <i class="fas fa-terminal"></i>
+          <span>Interactive Shell</span>
+        </a>
+        <a href="https://github.com" target="_blank" class="nav-item">
+          <i class="fab fa-github-alt"></i>
+          <span>GitHub Projects</span>
+        </a>
+        <a href="https://linkedin.com" target="_blank" class="nav-item">
+          <i class="fab fa-linkedin-in"></i>
+          <span>LinkedIn Connection</span>
+        </a>
+      </nav>
+
+      <!-- Sidebar Social Footer -->
+      <div class="sidebar-footer">
+        <a href="mailto:anish@example.com" class="social-icon" aria-label="Email Address" title="Email Author">
+          <i class="fas fa-envelope"></i>
+        </a>
+        <a href="https://github.com" target="_blank" class="social-icon" aria-label="GitHub Profile" title="GitHub Profile">
+          <i class="fab fa-github"></i>
+        </a>
+        <a href="https://linkedin.com" target="_blank" class="social-icon" aria-label="LinkedIn Profile" title="LinkedIn Profile">
+          <i class="fab fa-linkedin"></i>
+        </a>
+        <a href="https://twitter.com" target="_blank" class="social-icon" aria-label="Twitter Profile" title="Twitter Profile">
+          <i class="fab fa-twitter"></i>
+        </a>
+      </div>
+    </aside>
+
+    <!-- MAIN VIEWS PANEL -->
+    <main>
+      
+      <!-- VIEW 1: HOME GRID & SHELL (SPA) -->
+      <div id="home-view">
+        
+        <!-- Blog Hero Introduction -->
+        <header class="hero">
+          <span class="blog-tagline">LEARN. ANALYZE. DEFEND.</span>
+          <h1 class="blog-title glow-text">Inside the Kernel</h1>
+          <p class="blog-description">
+            A software engineering student's practical journey through reverse engineering, vulnerable kernel drivers (BYOVD), malware analysis, and detection engineering.
+          </p>
+        </header>
+
+        <!-- Search & Filter Options Row -->
+        <section class="search-filter-row">
+          <div class="search-bar">
+            <i class="fas fa-search"></i>
+            <input type="text" id="search-input" class="search-input" placeholder="Search writeups by keyword, topic, or tag...">
+          </div>
+          
+          <div class="filter-tabs">
+            <button class="filter-btn active" data-category="all">All</button>
+            <button class="filter-btn" data-category="Kernel Research">Kernel Research</button>
+            <button class="filter-btn" data-category="Reverse Engineering">Reverse Engineering</button>
+            <button class="filter-btn" data-category="Detection Engineering">Detection Eng</button>
+          </div>
+        </section>
+
+        <!-- Articles Grid -->
+        <section>
+          <div class="posts-section-header">
+            <i class="fas fa-book-open"></i>
+            <h2>Research & Writeups</h2>
+          </div>
+          <div id="posts-grid" class="posts-grid">
+            <!-- Dynamic Post Cards will render here via app.js -->
+          </div>
+        </section>
+
+        <!-- Interactive Terminal Widget -->
+        <section class="terminal-section">
+          <div class="posts-section-header">
+            <i class="fas fa-terminal"></i>
+            <h2>Interactive Research Console</h2>
+          </div>
+          
+          <div class="terminal-container">
+            <div class="terminal-header">
+              <div class="terminal-buttons">
+                <span class="term-btn red"></span>
+                <span class="term-btn yellow"></span>
+                <span class="term-btn green"></span>
+              </div>
+              <div class="terminal-title">kernel_research_shell.exe</div>
+              <div class="terminal-status">
+                <span class="term-pulse"></span>
+                <span>SYSTEM ONLINE</span>
+              </div>
+            </div>
+            
+            <div id="terminal-body" class="terminal-body">
+              <!-- Animated terminal dialogue happens here -->
+              <div class="term-input-line">
+                <span class="term-prompt">guest@inside-the-kernel:~$</span>
+                <input type="text" id="term-input" class="term-input" autocomplete="off" spellcheck="false" placeholder="Type help...">
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Newsletter Subscription Box -->
+        <section class="newsletter-card">
+          <div class="newsletter-icon">
+            <i class="fas fa-rss"></i>
+          </div>
+          <h2 class="newsletter-title">Subscribe to Kernel Research Updates</h2>
+          <p class="newsletter-desc">
+            Stay updated with fresh writeups, reversing methodologies, and detection rules delivered straight to your inbox.
+          </p>
+          <form class="newsletter-form" onsubmit="event.preventDefault(); alert('Subscribed to notifications!');">
+            <input type="email" class="newsletter-input" placeholder="Enter your email address" required>
+            <button type="submit" class="newsletter-btn">Subscribe</button>
+          </form>
+        </section>
+
+        <!-- Footer -->
+        <footer>
+          <p class="footer-text">
+            © 2026 Inside the Kernel. Developed by Anish Anandhan A L. Built for research & education.
+          </p>
+        </footer>
+
+      </div>
+
+      <!-- VIEW 2: ARTICLE READER (SPA) -->
+      <div id="article-view" class="article-view">
+        <a href="#" id="back-to-blog" class="back-btn">
+          <i class="fas fa-arrow-left"></i> Back to Blog Feed
+        </a>
+        
+        <article id="article-placeholder">
+          <!-- Dynamic article contents go here -->
+        </article>
+
+        <!-- Footer inside article reader -->
+        <footer>
+          <p class="footer-text">
+            © 2026 Inside the Kernel. Developed by Anish Anandhan A L. Built for research & education.
+          </p>
+        </footer>
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- Core App Controller Script -->
+  <script src="app.js"></script>
+</body>
+</html>

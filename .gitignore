@@ -1,0 +1,10 @@
+# Firebase cache & logs
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+
+# Python virtual environment
+venv/
+
+# System files
+.DS_Store
