@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00ff9d" />
+      <stop offset="100%" stop-color="#00e5ff" />
+    </linearGradient>
+  </defs>
+  <!-- Hexagon outline -->
+  <polygon points="50,15 85,35 85,65 50,85 15,65 15,35" stroke="url(#glow)" stroke-width="8" stroke-linejoin="round" fill="none" />
+  <!-- Center node -->
+  <circle cx="50" cy="50" r="15" fill="url(#glow)" />
+</svg>
