@@ -133,8 +133,8 @@ function renderPosts() {
   });
 }
 
-// Navigation Function: Go to Home
-function navigateToHome() {
+// Navigation UI Handler: Go to Home
+function navigateToHomeUI() {
   document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
   document.getElementById("nav-home").classList.add("active");
   
@@ -147,12 +147,49 @@ function navigateToHome() {
   }, 200);
 }
 
-// Navigation Function: Go to Terminal (scroll to it)
-function scrollToTerminal() {
-  navigateToHome();
+// Navigation UI Handler: Go to Terminal (scroll to it)
+function scrollToTerminalUI() {
+  navigateToHomeUI();
   setTimeout(() => {
-    document.querySelector(".terminal-section").scrollIntoView({ behavior: "smooth" });
+    const terminalEl = document.querySelector(".terminal-section");
+    if (terminalEl) {
+      terminalEl.scrollIntoView({ behavior: "smooth" });
+    }
   }, 300);
+}
+
+// Set hash routes (Routing triggers)
+function navigateToHome() {
+  window.location.hash = "";
+}
+
+function scrollToTerminal() {
+  window.location.hash = "terminal";
+}
+
+function openArticle(postId) {
+  window.location.hash = postId;
+}
+
+// Route Dispatcher based on URL Hash
+function handleRouting() {
+  const hash = window.location.hash;
+  
+  if (hash === "" || hash === "#" || hash === "#home") {
+    navigateToHomeUI();
+  } else if (hash === "#terminal") {
+    scrollToTerminalUI();
+  } else if (hash.startsWith("#")) {
+    const postId = hash.substring(1);
+    const post = blogPosts.find(p => p.id === postId);
+    if (post) {
+      openArticleUI(postId);
+    } else {
+      navigateToHomeUI();
+    }
+  } else {
+    navigateToHomeUI();
+  }
 }
 
 // Preprocess Markdown custom blocks (e.g. :::info, :::warning)
@@ -220,8 +257,8 @@ const brandDisclaimerHTML = `
   </div>
 `;
 
-// Navigation Function: Open and Load Specific Article via Fetch
-async function openArticle(postId) {
+// Navigation UI Handler: Open and Load Specific Article via Fetch
+async function openArticleUI(postId) {
   const post = blogPosts.find(p => p.id === postId);
   if (!post) return;
 
@@ -614,4 +651,8 @@ if (termInput) {
 window.addEventListener("DOMContentLoaded", () => {
   renderPosts();
   initTerminal();
+  handleRouting();
 });
+
+// Listen for browser Back/Forward navigation hash changes
+window.addEventListener("hashchange", handleRouting);
