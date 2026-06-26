@@ -17,4 +17,4 @@ jobs:
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ANISH_ANANDHAN_BLOG }}
-          projectId: anish-anandhan-security-blog
+          projectId: anish-anandhan-blog
