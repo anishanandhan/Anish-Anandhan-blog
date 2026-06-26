@@ -522,22 +522,38 @@ const termInput = document.getElementById("term-input");
 let commandHistory = [];
 let historyIndex = -1;
 
-const terminalWelcomeMessage = `===========================================================
-* INSIDE THE KERNEL - INTERACTIVE COMMAND SHELL v1.1.0    *
-* Target Host: windows-kernel-research                    *
-* Author: Anish Anandhan A L                              *
-* Mode: Markdown Compiler Enabled                         *
-===========================================================
-Type 'help' to display a list of available system commands.
+const terminalWelcomeMessage = `[+] INSIDE THE KERNEL INTERACTIVE SHELL (v1.2.0-secure)
+[+] SYSTEM ARCHITECTURE: x86_64 / Win11 Kernel (Ring 0 Bypass)
+[+] ACTIVE INSTANCES  : splunk_mcp_agent, memory_dumper, lpe_exploit
+[+] ESTABLISHED CONNS : target-corp-network (10.142.1.84)
+-----------------------------------------------------------
+WARNING: Unauthorized access to Ring 0 is prohibited.
+Type 'help' to view available system tools.
 `;
 
 function initTerminal() {
   if (!terminalBody) return;
-  terminalBody.innerHTML = `<div class="term-line welcome">${terminalWelcomeMessage}</div>`;
-  // Position input line at the bottom without focusing (prevents page jump scroll on load)
-  const inputLine = document.querySelector(".term-input-line");
+  
+  // Find the input line
+  const inputLine = terminalBody.querySelector(".term-input-line");
+  
+  // Clear only other child elements
+  const children = Array.from(terminalBody.children);
+  children.forEach(child => {
+    if (child !== inputLine) {
+      child.remove();
+    }
+  });
+
+  // Create welcome message
+  const welcomeDiv = document.createElement("div");
+  welcomeDiv.className = "term-line welcome";
+  welcomeDiv.innerHTML = terminalWelcomeMessage;
+  
   if (inputLine) {
-    terminalBody.appendChild(inputLine);
+    terminalBody.insertBefore(welcomeDiv, inputLine);
+  } else {
+    terminalBody.appendChild(welcomeDiv);
   }
 }
 
@@ -545,13 +561,18 @@ function writeTermLine(text, type = "output") {
   const line = document.createElement("div");
   line.className = `term-line ${type}`;
   line.innerHTML = text;
-  terminalBody.appendChild(line);
+  
+  const inputLine = terminalBody.querySelector(".term-input-line");
+  if (inputLine) {
+    terminalBody.insertBefore(line, inputLine);
+  } else {
+    terminalBody.appendChild(line);
+  }
+  
   terminalBody.scrollTop = terminalBody.scrollHeight;
 }
 
 function printTermPrompt() {
-  const inputLine = document.querySelector(".term-input-line");
-  terminalBody.appendChild(inputLine);
   termInput.focus();
 }
 
@@ -572,19 +593,22 @@ function executeCommand(cmdStr) {
     case "help":
       writeTermLine(`Available commands:
   - <strong>help</strong>          : Show this assistance menu
-  - <strong>ls</strong>            : List files in workspace
-  - <strong>cat &lt;file&gt;</strong>     : View content of a file (e.g. bio.txt)
+  - <strong>ls</strong>            : List files in security workspace
+  - <strong>cat &lt;file&gt;</strong>     : View file content (e.g. exploit_lpe.py, bio.txt)
   - <strong>skills</strong>         : View author's technical skills registry
-  - <strong>read &lt;id&gt;</strong>       : Read a specific blog post (e.g. read byovd-kernel-abuse)
+  - <strong>read &lt;id&gt;</strong>       : Read a blog post (e.g. read enterprise-council-ai)
   - <strong>matrix</strong>         : Initialize matrix stream rain sequence
   - <strong>clear</strong>          : Clear the shell console output`);
       break;
 
     case "ls":
-      writeTermLine(`total 4
--rw-r--r--  1 anish  staff   350B Jun 15 23:38 bio.txt
--rw-r--r--  1 anish  staff   512B Jun 15 23:38 skills.json
-drwxr-xr-x  3 anish  staff   102B Jun 15 23:38 posts/`);
+      writeTermLine(`total 24
+-rwxr-xr-x  1 root  root    1.8K Jun 27 00:20 exploit_lpe.py
+-rw-r--r--  1 root  root    350B Jun 27 00:20 bio.txt
+-rwxr-xr-x  1 root  root    1.2K Jun 27 00:20 cred_dumper.ps1
+-rw-r--r--  1 root  root    512B Jun 27 00:20 skills.json
+-rw-r--r--  1 root  root    280B Jun 27 00:20 target_list.json
+drwxr-xr-x  3 root  root    4.0K Jun 27 00:20 posts/`);
       blogPosts.forEach(post => {
         writeTermLine(`  └─ posts/${post.id}.md`, "success");
       });
@@ -602,8 +626,40 @@ Focus areas: Malware Analysis, Reverse Engineering, Vulnerable Driver Research, 
 Guiding Philosophy: Learn. Analyze. Defend.`, "success");
         } else if (filename === "skills.json") {
           executeCommand("skills");
+        } else if (filename === "exploit_lpe.py") {
+          writeTermLine(`# Windows LPE Exploit Payload - CVE-2024-21338 (AppLocker Bypass)
+# Target: Windows 11 Enterprise (Build 22621)
+# Author: Anish Anandhan A L
+
+import ctypes
+import sys
+
+def trigger_exploit():
+    print("[*] Opening handle to vulnerable AppLocker driver...")
+    # ... exploits kernel arbitrary memory write primitive ...
+    # ... swaps token with system process ...
+    print("[+] Exploit successful! Spawning SYSTEM shell...")
+    # os.system("cmd.exe")`, "success");
+        } else if (filename === "cred_dumper.ps1") {
+          writeTermLine(`# Credential Dumper via LSASS Memory Extraction
+# For defensive research & log generation
+# Author: Anish Anandhan A L
+
+[CmdletBinding()]
+param([string]$OutFile = "lsass.dmp")
+
+Write-Verbose "[*] Locating LSASS Process ID..."
+$LsassPid = (Get-Process lsass).Id
+Write-Verbose "[*] Attempting MiniDumpWriteDump call..."
+# calls dbghelp.dll:MiniDumpWriteDump to dump memory...
+Write-Verbose "[+] Memory dump complete: $OutFile"`, "success");
+        } else if (filename === "target_list.json") {
+          writeTermLine(JSON.stringify([
+            { "host": "dc01.corp.internal", "ip": "10.0.1.10", "status": "VULNERABLE" },
+            { "host": "web02.dmz.external", "ip": "192.168.12.4", "status": "EXPLOITED" },
+            { "host": "db05.prod.secure", "ip": "172.16.54.20", "status": "SCANNING" }
+          ], null, 2).replace(/\n/g, "<br>").replace(/ /g, "&nbsp;"), "success");
         } else if (filename.startsWith("posts/") && filename.endsWith(".md")) {
-          // Extract post ID
           const postId = args[1].substring(6, args[1].length - 3);
           executeCommand(`read ${postId}`);
         } else if (filename.startsWith("posts/")) {
@@ -755,6 +811,14 @@ if (termInput) {
         termInput.value = "";
       }
     }
+  });
+}
+
+// Click to focus terminal input when clicking anywhere inside the terminal container
+const terminalContainer = document.querySelector(".terminal-container");
+if (terminalContainer && termInput) {
+  terminalContainer.addEventListener("click", () => {
+    termInput.focus();
   });
 }
 
