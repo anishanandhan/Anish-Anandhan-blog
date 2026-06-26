@@ -36,14 +36,12 @@ jobs:
           # Clean up service account
           rm -f service-account.json
           
-          # If deployment failed, push log to github
-          if [ $status -ne 0 ]; then
-            echo "Deployment failed! Committing logs to repository..."
-            git config --global user.name "GitHub Actions"
-            git config --global user.email "actions@github.com"
-            git add deploy-log.txt
-            git commit -m "ci: add deployment failure logs [skip ci]" || true
-            git push origin main || true
-            exit 1
-          fi
+          exit $status
+
+      - name: Upload Deployment Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: firebase-deploy-logs
+          path: deploy-log.txt
 
