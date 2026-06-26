@@ -14,35 +14,18 @@ jobs:
       - name: Deploy to Firebase Hosting Custom
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ANISH_ANANDHAN_BLOG }}
+          DEBUG: "firebase:*"
         run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          
           if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
-            echo "FIREBASE_SERVICE_ACCOUNT secret is empty!" > error_log.txt
-            git add error_log.txt
-            git commit -m "ci: log empty secret [skip ci]"
-            git push origin main
+            echo "FIREBASE_SERVICE_ACCOUNT secret is empty!"
             exit 1
           fi
           
           echo "$FIREBASE_SERVICE_ACCOUNT" > service-account.json
           export GOOGLE_APPLICATION_CREDENTIALS=service-account.json
           
-          # Run deployment using npx firebase-tools and capture logs
-          set +e
-          npx firebase-tools deploy --only hosting --project anish-anandhan-blog --non-interactive > deploy-log.txt 2>&1
+          npx firebase-tools deploy --only hosting --project anish-anandhan-blog --non-interactive
           status=$?
-          set -e
           
-          # Clean up service account
           rm -f service-account.json
-          
-          if [ $status -ne 0 ]; then
-            cp deploy-log.txt error_log.txt
-            git add error_log.txt
-            git commit -m "ci: log deployment error [skip ci]"
-            git push origin main
-          fi
-          
           exit $status
