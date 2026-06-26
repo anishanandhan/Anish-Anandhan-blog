@@ -35,6 +35,19 @@ const blogPosts = [
   }
 ];
 
+// --- DATABASE / FIREBASE BACKEND CONFIGURATION ---
+const firebaseConfig = {
+  projectId: "anish-anandhan-blog"
+};
+
+// Initialize Firebase App & Cloud Firestore in compat mode
+if (typeof firebase !== 'undefined') {
+  firebase.initializeApp(firebaseConfig);
+  var db = firebase.firestore();
+} else {
+  console.warn("Firebase SDK was not loaded. Database connections are offline.");
+}
+
 // --- SPA ROUTING & APP STATE ---
 let currentCategory = "all";
 let searchQuery = "";
@@ -414,6 +427,48 @@ document.getElementById("back-to-blog").addEventListener("click", (e) => {
   e.preventDefault();
   navigateToHome();
 });
+
+// Newsletter Subscription Database Form Handler
+const newsletterForm = document.getElementById("newsletter-form");
+const newsletterEmail = document.getElementById("newsletter-email");
+
+if (newsletterForm) {
+  newsletterForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const emailVal = newsletterEmail.value.trim();
+    if (!emailVal) return;
+
+    const submitBtn = newsletterForm.querySelector(".newsletter-btn");
+    const originalText = submitBtn.innerText;
+
+    submitBtn.disabled = true;
+    submitBtn.innerText = "Subscribing...";
+
+    if (typeof db === 'undefined') {
+      alert("Database connection is currently offline. Please try again later.");
+      submitBtn.disabled = false;
+      submitBtn.innerText = originalText;
+      return;
+    }
+
+    try {
+      // Save email directly to subscribers collection in Cloud Firestore
+      await db.collection("subscribers").add({
+        email: emailVal,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      alert("Successfully subscribed to research updates!");
+      newsletterEmail.value = "";
+    } catch (error) {
+      console.error("Database write error:", error);
+      alert("Subscription failed. Please try again.");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerText = originalText;
+    }
+  });
+}
 
 
 // --- INTERACTIVE TERMINAL ENGINE ---
