@@ -15,20 +15,15 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ANISH_ANANDHAN_BLOG }}
         run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          
           if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
-            echo "::error file=index.html,line=1::FIREBASE_SERVICE_ACCOUNT secret is empty!"
+            echo "FIREBASE_SERVICE_ACCOUNT secret is empty!" > error_log.txt
+            git add error_log.txt
+            git commit -m "ci: log empty secret [skip ci]"
+            git push origin main
             exit 1
-          fi
-          
-          # Print diagnostics to index.html annotations
-          echo "::error file=index.html,line=2::Secret length: ${#FIREBASE_SERVICE_ACCOUNT}"
-          echo "::error file=index.html,line=3::Secret prefix: $(echo -n "$FIREBASE_SERVICE_ACCOUNT" | head -c 15)..."
-          echo "::error file=index.html,line=4::Secret suffix: ...$(echo -n "$FIREBASE_SERVICE_ACCOUNT" | tail -c 15)"
-          
-          if echo "$FIREBASE_SERVICE_ACCOUNT" | jq . > /dev/null 2>&1; then
-            echo "::error file=index.html,line=5::Secret is valid JSON."
-          else
-            echo "::error file=index.html,line=5::Secret is NOT valid JSON!"
           fi
           
           echo "$FIREBASE_SERVICE_ACCOUNT" > service-account.json
@@ -43,11 +38,11 @@ jobs:
           # Clean up service account
           rm -f service-account.json
           
-          # Output each log line as an annotation if failed
           if [ $status -ne 0 ]; then
-            # Replace newlines with %0A for multi-line annotation
-            LOG_ESCAPED=$(cat deploy-log.txt | sed ':a;N;$!ba;s/\n/%0A/g')
-            echo "::error file=index.html,line=6::Deployment failed! Log details:%0A$LOG_ESCAPED"
+            cp deploy-log.txt error_log.txt
+            git add error_log.txt
+            git commit -m "ci: log deployment error [skip ci]"
+            git push origin main
           fi
           
           exit $status
