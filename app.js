@@ -1,6 +1,17 @@
 // --- BLOG POSTS METADATA STORE (NO HTML STRINGS) ---
 const blogPosts = [
   {
+    id: "enterprise-council-ai",
+    title: 'Balancing Security and Business: How We Built "Enterprise Council AI" for the Splunk Hackathon 2026',
+    tag: "Detection Engineering",
+    tagClass: "detection",
+    date: "June 27, 2026",
+    readTime: "9 min read",
+    excerpt: "A deep dive into building a 7-stage agentic consensus pipeline using the Model Context Protocol (MCP), a topological Digital Twin, adversarial multi-agent debates, and a developer-first Python SDK.",
+    bannerText: "AGENTIC DEBATE",
+    markdownPath: "posts/enterprise-council-ai.md"
+  },
+  {
     id: "byovd-kernel-abuse",
     title: "Bring Your Own Vulnerable Driver (BYOVD): Understanding Kernel-Mode Abuse",
     tag: "Kernel Research",
@@ -248,6 +259,8 @@ function postProcessArticleDOM(container) {
       lang = langClass.substring(9);
     }
     
+    if (lang === "mermaid") return;
+    
     // Create wrapper
     const wrapper = document.createElement("div");
     wrapper.className = "code-block-wrapper";
@@ -341,6 +354,38 @@ async function openArticleUI(postId) {
 
     // Add copy buttons to code blocks
     postProcessArticleDOM(articleContainer);
+
+    // Render mermaid diagrams if any are present
+    if (typeof mermaid !== 'undefined') {
+      const mermaidBlocks = articleContainer.querySelectorAll("pre code.language-mermaid");
+      if (mermaidBlocks.length > 0) {
+        mermaidBlocks.forEach((block, idx) => {
+          const pre = block.parentElement;
+          const codeContent = block.innerText;
+          const uniqueId = `mermaid-chart-${idx}`;
+          
+          // Create container for mermaid rendering
+          const chartDiv = document.createElement("div");
+          chartDiv.className = "mermaid-chart-container";
+          chartDiv.id = uniqueId;
+          
+          // Replace pre with chart container
+          pre.parentNode.replaceChild(chartDiv, pre);
+          
+          try {
+            mermaid.render(uniqueId + '-svg', codeContent).then(({ svg }) => {
+              chartDiv.innerHTML = svg;
+            }).catch(err => {
+              console.error("Mermaid rendering error:", err);
+              chartDiv.innerHTML = `<pre class="language-mermaid">${codeContent}</pre>`;
+            });
+          } catch (renderError) {
+            console.error("Mermaid synchronous render error:", renderError);
+            chartDiv.innerHTML = `<pre class="language-mermaid">${codeContent}</pre>`;
+          }
+        });
+      }
+    }
 
     setTimeout(() => {
       articleView.classList.add("active");
@@ -715,6 +760,19 @@ if (termInput) {
 
 // On Page Load - Robust DOM ready check to prevent skipped events
 function initApp() {
+  if (typeof mermaid !== 'undefined') {
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'dark',
+      securityLevel: 'loose',
+      themeVariables: {
+        background: '#0d0f14',
+        primaryColor: '#07080b',
+        primaryTextColor: '#c5c9db',
+        lineColor: '#00ff9d'
+      }
+    });
+  }
   renderPosts();
   initTerminal();
   handleRouting();

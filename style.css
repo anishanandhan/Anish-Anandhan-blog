@@ -1248,3 +1248,20 @@ main {
     height: 200px;
   }
 }
+
+/* Mermaid Diagram Rendering Container */
+.mermaid-chart-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow-x: auto;
+}
+.mermaid-chart-container svg {
+  max-width: 100%;
+  height: auto;
+}
