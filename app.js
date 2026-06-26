@@ -180,7 +180,14 @@ function handleRouting() {
   } else if (hash === "#terminal") {
     scrollToTerminalUI();
   } else if (hash.startsWith("#")) {
-    const postId = hash.substring(1);
+    let postId = hash.substring(1);
+    // Strip leading and trailing slashes if present (e.g. #/byovd-kernel-abuse/ -> byovd-kernel-abuse)
+    if (postId.startsWith("/")) {
+      postId = postId.substring(1);
+    }
+    if (postId.endsWith("/")) {
+      postId = postId.substring(0, postId.length - 1);
+    }
     const post = blogPosts.find(p => p.id === postId);
     if (post) {
       openArticleUI(postId);
@@ -194,16 +201,16 @@ function handleRouting() {
 
 // Preprocess Markdown custom blocks (e.g. :::info, :::warning)
 function preprocessMarkdown(mdText) {
-  // Parse :::info ... ::: blocks
-  mdText = mdText.replace(/:::info\s*([\s\S]*?)\n:::/g, (match, content) => {
+  // Parse :::info ... ::: blocks (robust to CRLF and extra spaces)
+  mdText = mdText.replace(/:::info\s*([\s\S]*?)\s*:::/g, (match, content) => {
     return `<div class="callout info">
       <div class="callout-icon"><i class="fas fa-info-circle"></i></div>
       <div class="callout-content">${marked.parse(content.trim())}</div>
     </div>`;
   });
 
-  // Parse :::warning ... ::: blocks
-  mdText = mdText.replace(/:::warning\s*([\s\S]*?)\n:::/g, (match, content) => {
+  // Parse :::warning ... ::: blocks (robust to CRLF and extra spaces)
+  mdText = mdText.replace(/:::warning\s*([\s\S]*?)\s*:::/g, (match, content) => {
     return `<div class="callout warning">
       <div class="callout-icon"><i class="fas fa-exclamation-circle"></i></div>
       <div class="callout-content">${marked.parse(content.trim())}</div>
@@ -427,7 +434,11 @@ Type 'help' to display a list of available system commands.
 function initTerminal() {
   if (!terminalBody) return;
   terminalBody.innerHTML = `<div class="term-line welcome">${terminalWelcomeMessage}</div>`;
-  printTermPrompt();
+  // Position input line at the bottom without focusing (prevents page jump scroll on load)
+  const inputLine = document.querySelector(".term-input-line");
+  if (inputLine) {
+    terminalBody.appendChild(inputLine);
+  }
 }
 
 function writeTermLine(text, type = "output") {
@@ -647,12 +658,18 @@ if (termInput) {
   });
 }
 
-// On Page Load
-window.addEventListener("DOMContentLoaded", () => {
+// On Page Load - Robust DOM ready check to prevent skipped events
+function initApp() {
   renderPosts();
   initTerminal();
   handleRouting();
-});
+}
+
+if (document.readyState === "loading") {
+  window.addEventListener("DOMContentLoaded", initApp);
+} else {
+  initApp();
+}
 
 // Listen for browser Back/Forward navigation hash changes
 window.addEventListener("hashchange", handleRouting);
