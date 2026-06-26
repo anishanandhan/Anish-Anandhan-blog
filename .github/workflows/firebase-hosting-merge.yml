@@ -15,6 +15,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
       - name: Create Deploy Metadata
         run: echo '{"timestamp":"'$(date -u)'","commit":"'${{ github.sha }}'"}' > deploy-metadata.json
       - uses: FirebaseExtended/action-hosting-deploy@v0
