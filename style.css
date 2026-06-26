@@ -1265,3 +1265,50 @@ main {
   max-width: 100%;
   height: auto;
 }
+
+/* Quick Tools Terminal Toolbar */
+.terminal-toolbar {
+  background-color: #0e1117;
+  border-bottom: 1px solid var(--border-color);
+  padding: 0.5rem 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  border-top: none;
+}
+
+.toolbar-label {
+  color: var(--text-muted);
+  margin-right: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.toolbar-btn {
+  background-color: rgba(0, 255, 157, 0.03);
+  border: 1px solid rgba(0, 255, 157, 0.15);
+  border-radius: 4px;
+  color: var(--accent);
+  padding: 0.2rem 0.55rem;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  transition: all var(--transition-fast) ease;
+  outline: none;
+}
+
+.toolbar-btn:hover {
+  background-color: rgba(0, 255, 157, 0.12);
+  border-color: var(--accent);
+  box-shadow: 0 0 8px rgba(0, 255, 157, 0.25);
+  transform: translateY(-1px);
+}
+
+.toolbar-btn:active {
+  transform: translateY(0);
+}
+

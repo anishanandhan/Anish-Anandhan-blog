@@ -181,6 +181,20 @@
                 <span>SYSTEM ONLINE</span>
               </div>
             </div>
+
+            <!-- Interactive Quick Actions Toolbar for Non-CLI Users -->
+            <div class="terminal-toolbar">
+              <span class="toolbar-label"><i class="fas fa-bolt"></i> Quick Tools:</span>
+              <button class="toolbar-btn" onclick="runCommandFromClick('help')">help</button>
+              <button class="toolbar-btn" onclick="runCommandFromClick('ls')">ls</button>
+              <button class="toolbar-btn" onclick="runCommandFromClick('whoami')">whoami</button>
+              <button class="toolbar-btn" onclick="runCommandFromClick('sysinfo')">sysinfo</button>
+              <button class="toolbar-btn" onclick="runCommandFromClick('nmap')">nmap</button>
+              <button class="toolbar-btn" onclick="runCommandFromClick('exploit')">exploit</button>
+              <button class="toolbar-btn" onclick="runCommandFromClick('logs')">logs</button>
+              <button class="toolbar-btn" onclick="runCommandFromClick('matrix')">matrix</button>
+              <button class="toolbar-btn" onclick="runCommandFromClick('clear')">clear</button>
+            </div>
             
             <div id="terminal-body" class="terminal-body">
               <!-- Animated terminal dialogue happens here -->

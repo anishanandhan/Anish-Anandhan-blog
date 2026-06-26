@@ -595,6 +595,11 @@ function executeCommand(cmdStr) {
   - <strong>help</strong>          : Show this assistance menu
   - <strong>ls</strong>            : List files in security workspace
   - <strong>cat &lt;file&gt;</strong>     : View file content (e.g. exploit_lpe.py, bio.txt)
+  - <strong>whoami</strong>         : Display current session privileges
+  - <strong>sysinfo</strong>        : Get target system details & kernel specs
+  - <strong>nmap</strong>           : Scan target ports on target-corp-network
+  - <strong>exploit</strong>        : Trigger CVE-2024-21338 AppLocker Ring 0 bypass exploit
+  - <strong>logs</strong>           : Stream SIEM/Splunk threat detection events
   - <strong>skills</strong>         : View author's technical skills registry
   - <strong>read &lt;id&gt;</strong>       : Read a blog post (e.g. read enterprise-council-ai)
   - <strong>matrix</strong>         : Initialize matrix stream rain sequence
@@ -704,6 +709,68 @@ Write-Verbose "[+] Memory dump complete: $OutFile"`, "success");
     case "matrix":
       writeTermLine("Initializing digital rain sequence in terminal background...", "success");
       startMatrixRain();
+      break;
+
+    case "whoami":
+      writeTermLine(`Current Session Identity:
+  Username   : root
+  Domain     : LOCALHOST
+  Privileges : SeDebugPrivilege (Enabled)
+               SeLoadDriverPrivilege (Enabled)
+               SeImpersonatePrivilege (Enabled)
+  Mode       : SYSTEM LEVEL INTERACTION (R0)`, "success");
+      break;
+
+    case "sysinfo":
+      writeTermLine(`Host Name           : KERNEL-DEV-WIN11
+OS Name             : Microsoft Windows 11 Enterprise
+OS Version          : 10.0.22621 N/A Build 22621
+System Type         : x64-based PC
+Kernel Version      : NT 10.0.22621.3155
+Installed RAM       : 32 GB
+EDR Agent Status    : BYPASSED (Active patches applied)`, "success");
+      break;
+
+    case "nmap":
+      writeTermLine("Starting network port scan on 10.142.1.84...", "info");
+      setTimeout(() => {
+        writeTermLine("Scanning 1000 ports...");
+        setTimeout(() => {
+          writeTermLine(`PORT     STATE  SERVICE
+22/tcp   open   ssh
+80/tcp   open   http
+443/tcp  open   https
+445/tcp  open   microsoft-ds
+3389/tcp open   ms-wbt-server
+8089/tcp open   splunkd`, "success");
+          writeTermLine("Scan complete. 6 open ports identified.", "success");
+        }, 800);
+      }, 500);
+      break;
+
+    case "exploit":
+      writeTermLine("[*] Initializing exploit chain CVE-2024-21338...", "warning");
+      setTimeout(() => {
+        writeTermLine("[*] Injecting shellcode payload into target driver...", "warning");
+        setTimeout(() => {
+          writeTermLine("[*] Overwriting page tables in physical memory (Ring 0)...", "warning");
+          setTimeout(() => {
+            writeTermLine("[+] Privilege escalation successful! System Token obtained.", "success");
+            writeTermLine("root@inside-the-kernel:~# whoami -> nt authority\\system", "success");
+          }, 1000);
+        }, 1000);
+      }, 1000);
+      break;
+
+    case "logs":
+      writeTermLine("Connecting to Splunk index=security sourcetype=WinEventLog...", "info");
+      setTimeout(() => {
+        writeTermLine(`TIMESTAMP           EVENT_ID   USER           MSG
+-----------------------------------------------------------
+00:18:23 27-06-2026   10       John.S         LSASS Memory Access (Process: mimikatz.exe)
+00:19:04 27-06-2026   4624     SYSTEM         Successful Logon from 10.142.1.84
+00:19:12 27-06-2026   11       root           File Creation: C:\\Windows\\temp\\lsass.dmp`, "warning");
+      }, 800);
       break;
 
     default:
@@ -850,3 +917,13 @@ if (document.readyState === "loading") {
 
 // Listen for browser Back/Forward navigation hash changes
 window.addEventListener("hashchange", handleRouting);
+
+// Global helper to execute commands from visual tool buttons
+window.runCommandFromClick = function(cmdStr) {
+  if (termInput) {
+    termInput.value = cmdStr;
+    executeCommand(cmdStr);
+    termInput.value = "";
+  }
+};
+
