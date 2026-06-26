@@ -22,6 +22,10 @@ jobs:
             echo "::error::FIREBASE_SERVICE_ACCOUNT secret is empty!"
             exit 1
           fi
+          echo "Secret length: ${#FIREBASE_SERVICE_ACCOUNT}"
+          echo "Secret prefix: $(echo -n "$FIREBASE_SERVICE_ACCOUNT" | head -c 15)..."
+          echo "Secret suffix: ...$(echo -n "$FIREBASE_SERVICE_ACCOUNT" | tail -c 15)"
+          echo "$FIREBASE_SERVICE_ACCOUNT" | jq . > /dev/null && echo "Secret is valid JSON." || echo "::error::Secret is NOT valid JSON!"
           echo "$FIREBASE_SERVICE_ACCOUNT" > service-account.json
           export GOOGLE_APPLICATION_CREDENTIALS=service-account.json
           
