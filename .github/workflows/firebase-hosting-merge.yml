@@ -6,6 +6,9 @@ on:
   push:
     branches:
       - main
+permissions:
+  contents: write
+
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
@@ -21,5 +24,22 @@ jobs:
           fi
           echo "$FIREBASE_SERVICE_ACCOUNT" > service-account.json
           export GOOGLE_APPLICATION_CREDENTIALS=service-account.json
-          npx firebase deploy --only hosting --project anish-anandhan-blog
+          
+          # Run deployment and capture logs
+          npx firebase deploy --only hosting --project anish-anandhan-blog > deploy-log.txt 2>&1
+          status=$?
+          
+          # Clean up service account
           rm -f service-account.json
+          
+          # If deployment failed, push log to github
+          if [ $status -ne 0 ]; then
+            echo "Deployment failed! Committing logs to repository..."
+            git config --global user.name "GitHub Actions"
+            git config --global user.email "actions@github.com"
+            git add deploy-log.txt
+            git commit -m "ci: add deployment failure logs [skip ci]" || true
+            git push origin main || true
+            exit 1
+          fi
+
