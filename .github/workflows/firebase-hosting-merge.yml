@@ -6,60 +6,15 @@ on:
   push:
     branches:
       - main
-permissions:
-  contents: write
-
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy to Firebase Hosting
-        env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ANISH_ANANDHAN_BLOG }}
-        run: |
-          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
-            echo "::error::FIREBASE_SERVICE_ACCOUNT secret is empty!"
-            exit 1
-          fi
-          # Print diagnostics to index.html annotations
-          echo "::error file=index.html,line=2::Secret length: ${#FIREBASE_SERVICE_ACCOUNT}"
-          echo "::error file=index.html,line=3::Secret prefix: $(echo -n "$FIREBASE_SERVICE_ACCOUNT" | head -c 15)..."
-          echo "::error file=index.html,line=4::Secret suffix: ...$(echo -n "$FIREBASE_SERVICE_ACCOUNT" | tail -c 15)"
-          if echo "$FIREBASE_SERVICE_ACCOUNT" | jq . > /dev/null; then
-            echo "::error file=index.html,line=5::Secret is valid JSON."
-          else
-            echo "::error file=index.html,line=5::Secret is NOT valid JSON!"
-          fi
-          
-          echo "$FIREBASE_SERVICE_ACCOUNT" > service-account.json
-          export GOOGLE_APPLICATION_CREDENTIALS=service-account.json
-          
-          # Run deployment and capture logs (disable set -e temporarily to capture exit status)
-          set +e
-          npx firebase deploy --only hosting --project anish-anandhan-blog > deploy-log.txt 2>&1
-          status=$?
-          set -e
-          
-          # Clean up service account
-          rm -f service-account.json
-          
-          # Output each log line as an annotation if failed
-          if [ $status -ne 0 ]; then
-            echo "::error file=index.html,line=6::Log line count: $(wc -l < deploy-log.txt)"
-            line_no=7
-            while IFS= read -r line || [ -n "$line" ]; do
-              echo "::error file=index.html,line=$line_no::$line"
-              line_no=$((line_no+1))
-            done < deploy-log.txt
-          fi
-          
-          exit $status
-
-      - name: Upload Deployment Logs
-        if: always()
-        uses: actions/upload-artifact@v4
+      - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
-          name: firebase-deploy-logs
-          path: deploy-log.txt
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ANISH_ANANDHAN_BLOG }}
+          channelId: live
+          projectId: anish-anandhan-blog
 
