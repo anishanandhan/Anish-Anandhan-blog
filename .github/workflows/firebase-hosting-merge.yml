@@ -11,21 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy to Firebase Hosting Custom
-        env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ANISH_ANANDHAN_BLOG }}
-          DEBUG: "firebase:*"
-        run: |
-          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
-            echo "FIREBASE_SERVICE_ACCOUNT secret is empty!"
-            exit 1
-          fi
-          
-          echo "$FIREBASE_SERVICE_ACCOUNT" > service-account.json
-          export GOOGLE_APPLICATION_CREDENTIALS=service-account.json
-          
-          npx firebase-tools deploy --only hosting --project anish-anandhan-blog --non-interactive
-          status=$?
-          
-          rm -f service-account.json
-          exit $status
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ANISH_ANANDHAN_BLOG }}
+          channelId: live
+          projectId: anish-anandhan-blog
