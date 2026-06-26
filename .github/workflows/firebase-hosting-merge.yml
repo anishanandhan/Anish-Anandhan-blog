@@ -35,9 +35,11 @@ jobs:
           echo "$FIREBASE_SERVICE_ACCOUNT" > service-account.json
           export GOOGLE_APPLICATION_CREDENTIALS=service-account.json
           
-          # Run deployment and capture logs
+          # Run deployment and capture logs (disable set -e temporarily to capture exit status)
+          set +e
           npx firebase deploy --only hosting --project anish-anandhan-blog > deploy-log.txt 2>&1
           status=$?
+          set -e
           
           # Clean up service account
           rm -f service-account.json
